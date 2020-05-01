@@ -1,0 +1,311 @@
+PROGRAM iofile
+%NOBUSYLAMP
+%COMMENT = 'logfile'
+%NOLOCKGROUP
+%NOPAUSE = COMMAND + TPENABLE + ERROR
+
+%INCLUDE display.c.klt
+%INCLUDE iofile.klt
+
+%INCLUDE strings.klh
+%INCLUDE iofile.private.klh
+%INCLUDE iofile.klh
+%INCLUDE display.klh
+%INCLUDE errors.klh
+%INCLUDE registers.klh
+
+--fanuc utilities
+%INCLUDE klrdutil.kl
+
+BEGIN
+END iofile
+
+--### Private #####
+
+ROUTINE printTime
+  VAR
+    tme   : INTEGER
+    sec : INTEGER
+    str    : STRING[30]
+    secstr : STRING[4]
+  BEGIN
+      GET_TIME(tme)
+    CNV_TIME_STR(tme,str)
+      str = rstrip(str)
+      --get seconds
+      sec = tme AND 31
+      sec = sec * 2
+      
+      -- add to string
+      secstr = i_to_s(sec)
+      IF sec < 10 THEN
+          secstr = '0' + secstr
+      ENDIF
+      str = str + ':' + secstr
+
+      --add seconds
+      
+      RETURN(str)
+  END printTime
+
+ROUTINE logmsg2str_
+  VAR
+    severity : INTEGER
+    STATUS : INTEGER
+    entry: INTEGER
+    color : INTEGER
+    prefix : STRING[5]
+  BEGIN
+    -- uses set_severity from display
+    -- in program call set_severity first.
+    -- global severity is referenced in display
+    GET_VAR(entry, 'display', 'severity', severity, STATUS)
+    CHK_STAT(STATUS)
+    -- handle uninitialized variables
+    IF UNINIT(severity) THEN
+      set_severity(WARN)
+    ENDIF
+
+    -- get time
+    logTime(fl)
+    
+    --get other attributes from display
+    GET_VAR(entry, 'display', 'color', color, STATUS)
+    GET_VAR(entry, 'display', 'prefix', prefix, STATUS)
+    CHK_STAT(STATUS)
+
+    -- return
+    WRITE fl(
+        CHR(cc_bgcolor), CHR(color),
+        prefix,
+        CHR(cc_bgcolor), CHR(cc_dfcolor),
+        msg,
+        CR)
+  END logmsg2str_
+
+--### Public #####
+
+ROUTINE logError
+  BEGIN
+    SELECT errType OF
+      CASE(0):
+        WRITE TPERROR(CR, msg)
+      CASE(1):
+        WRITE TPERROR(msg)
+      CASE(2):
+        WRITE TPERROR(dInt)
+      CASE(3):
+        WRITE TPERROR(CR)
+    ENDSELECT
+  END logError
+
+--
+ROUTINE logOpen
+  -- readWrite: 'RO' - Read only
+  --            'RW" - Read Write
+  VAR
+    ec       : INTEGER
+  BEGIN
+    CLR_IO_STAT(fl)
+    OPEN FILE fl(readWrite, filename)
+    ec = IO_STATUS(fl)
+    IF ec <> 0 THEN
+    logOpened = FALSE
+      logError('File'+ filename +'failed to open', 0,0)
+    ELSE
+    logOpened = TRUE
+    ENDIF 
+  END logOpen
+
+--
+ROUTINE logClose
+  VAR
+    ec    : INTEGER
+  BEGIN
+    CLR_IO_STAT(fl)
+    CLOSE FILE fl
+    ec = IO_STATUS(fl)
+    IF ec <> 0 THEN
+      logError('Failed to close read file', 0,0)
+    ELSE
+    logOpened = FALSE
+    ENDIF
+  END logClose
+
+ROUTINE logTime
+  VAR
+    tme   : INTEGER
+    str    : STRING[30]
+  BEGIN
+  IF logOpened THEN
+      str = printTime
+      WRITE fl(str)
+  ENDIF
+  END logTime
+
+-- log a carriage return
+ROUTINE log_CR
+  VAR
+    ec       : INTEGER
+  BEGIN
+    IF logOpened THEN
+      WRITE fl(CR)
+      ec = IO_STATUS(fl)
+      IF ec <> 0 THEN 
+        logError('Failed to log CR', 0,0)
+    ENDIF
+    ENDIF
+  END log_CR
+
+-- log debug or info message
+ROUTINE log_msg
+  BEGIN
+    logmsg2str_(fl, msg)
+  END log_msg
+
+-- log debug or info message
+ROUTINE log_numreg
+  VAR
+    msg : STRING[25]
+  BEGIN
+    msg = 'R['+ i_to_s(reg_no) + '] = ' + numreg_to_s(reg_no)
+    logmsg2str_(fl, msg)
+  END log_numreg
+
+-- log debug or info message
+ROUTINE log_posreg
+  VAR
+    pr_str : STRING[10]
+  BEGIN
+    pr_str = 'PR['+ i_to_s(reg_no) + '] = '
+    logmsg2str_(fl, pr_str)
+    -- put on new line
+    WRITE fl(posreg_to_s(reg_no, grp_no))
+  END log_posreg
+
+ROUTINE log_strreg
+  BEGIN
+    logmsg2str_(fl,'SR['+ i_to_s(reg_no) + '] = ' + GET_SR(reg_no))
+  END log_strreg
+
+ROUTINE log_io
+  VAR
+    port_type : INTEGER
+  BEGIN
+    logmsg2str_(fl, typ + '['+ i_to_s(port_no) + '] = ' + i_to_s(GET_IO(typ, port_no)))
+  END log_io
+
+
+ROUTINE loadFile
+  VAR
+    stat : INTEGER
+  BEGIN
+    IF overwrite = TRUE THEN
+      LOAD(filename, 1, stat)
+    ELSE
+      LOAD(filename, 0, stat)
+    ENDIF
+
+    IF stat <> 0 THEN
+      logError('Error: ' + i_to_s(stat), 0, 0)
+    ENDIF
+  END loadFile
+
+--
+ROUTINE createFile
+  VAR
+    STATUS 	  : INTEGER
+    exists	  : BOOLEAN
+  BEGIN
+    -- try to open file in Read only state
+    CLR_IO_STAT(fl)
+    OPEN FILE fl('RO', filename)
+    STATUS = IO_STATUS(fl)
+    -- if the file fails to open
+    -- reopen as a RW file input blank line then exit
+    -- to create the file
+    IF STATUS <> 0 THEN
+      LogOpen(filename, 'RW', fl)
+      WRITE fl(CR,CR)
+      LogClose(fl)
+      RETURN(TRUE)
+    ELSE
+      LogClose(fl)
+      RETURN(FALSE)
+    ENDIF 
+  END createFile
+
+
+-- read any file into a string array
+-- for further processing
+ROUTINE file_to_arr
+  VAR
+    dumStr  : STRING[30]
+    i     : INTEGER
+    b     : BOOLEAN
+  BEGIN
+    dumStr = ''
+    LogOpen(filename, 'RO', fl)
+    i = 1
+    FOR i=1 TO ARRAY_LEN(out) DO
+      -- line by line go through read file
+      -- output into an array
+      READ fl(out[i])
+      IF UNINIT(out[i]) THEN
+        karelError('ERROR, invalid Program' + filename + '. Unable to read.', ER_ABORT)
+      ENDIF
+      -- evaluate if line contains the break keyword
+      IF (NOT UNINIT(break_str)) OR (break_str <> '') THEN
+        b = search_str(out[i], break_str)
+        IF b THEN
+          LogClose(fl)
+          RETURN(TRUE)
+        ENDIF
+      ENDIF
+    ENDFOR
+
+    IF (BYTES_LEFT(fl) > 0) THEN
+      karelError('String array was not large enough to store ' + filename, ER_WARN)
+    ENDIF
+
+    LogClose(fl)
+    RETURN(FALSE)
+  END file_to_arr
+
+-- Determine if a file is an LS file
+ROUTINE is_Lsfile
+  VAR
+    dumStr	 : STRING[30]
+    line  : STRING[127]
+    b : BOOLEAN
+  BEGIN
+    -- initialize variables
+    dumStr = ''
+    b = FALSE
+    LogOpen(filename, 'RO', fl)
+    -- loop through file line by line
+    -- if '/MN' is found in the file
+    -- it is regarded as an LS file
+    WHILE dumStr <> '/MN' DO
+      READ fl(line)
+      IF UNINIT(line) THEN
+        karelError('ERROR, invalid Program' + filename + '. Unable to read.', ER_ABORT)
+      ENDIF
+      dumStr = SUB_STR(line, 1, 3)
+      -- if there is nothing else to read
+      -- in the file break out of loop
+      IF (BYTES_LEFT(fl) = 0) THEN
+        GOTO BREAK
+      ENDIF
+    ENDWHILE
+    -- if found set to true
+    IF (dumStr = '/MN') THEN
+      b = TRUE
+    ENDIF
+    -- close file
+    BREAK::
+    LogClose(fl)
+
+    RETURN(b)
+  END is_Lsfile
+

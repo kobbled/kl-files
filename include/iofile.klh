@@ -1,0 +1,22 @@
+%ifndef iofile_h
+%define iofile_h
+
+-- files
+ROUTINE logError(msg : STRING; dInt : INTEGER; errType : INTEGER) FROM iofile
+ROUTINE logOpen(filename : STRING;  readWrite : STRING; fl : FILE) FROM iofile
+ROUTINE logClose(fl : FILE) FROM iofile
+ROUTINE logTime(fl : FILE) FROM iofile
+ROUTINE log_CR(fl : FILE) FROM iofile
+ROUTINE log_msg(fl: FILE; msg : STRING) FROM iofile
+ROUTINE log_numreg(fl: FILE; reg_no : INTEGER) FROM iofile
+ROUTINE log_posreg(fl: FILE; reg_no, grp_no : INTEGER) FROM iofile
+ROUTINE log_strreg(fl: FILE; reg_no : INTEGER) FROM iofile
+ROUTINE log_io(fl: FILE; typ : STRING; port_no : INTEGER) FROM iofile
+ROUTINE loadFile(filename : STRING ; overwrite : BOOLEAN) FROM iofile
+ROUTINE createFile(filename : STRING; fl : FILE) : BOOLEAN FROM iofile
+
+--conversions
+ROUTINE file_to_arr(filename : STRING;  fl : FILE; out : ARRAY[*] OF STRING ; break_str: STRING) : BOOLEAN FROM iofile
+ROUTINE is_Lsfile(filename : STRING;  fl : FILE) : BOOLEAN FROM iofile
+
+%endif --iofile_h

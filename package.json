@@ -1,0 +1,21 @@
+{
+  "manver" : "1",
+  "project" : "iofile",
+  "description" : "",
+  "version" : "0.0.1",
+  "license" : "MIT",
+  "author" : "Kobbled",
+  "source" : [
+    "src/iofile.kl"
+  ],
+  "includes" : [
+    "include"
+  ],
+  "depends" : [
+    "errors",
+    "display",
+    "registers",
+    "Strings",
+    "KUnit"
+  ]
+}

@@ -1,0 +1,8 @@
+%ifndef iofile_private_h
+%define iofile_private_h
+
+
+ROUTINE printTime : STRING FROM iofile
+ROUTINE logmsg2str_(fl: FILE; msg : STRING) FROM iofile
+
+%endif --iofile_h
