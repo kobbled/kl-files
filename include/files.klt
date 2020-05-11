@@ -1,0 +1,7 @@
+%ifndef files_t
+%define files_t
+
+VAR
+  logOpened   : BOOLEAN
+
+%endif --files_t

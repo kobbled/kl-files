@@ -1,7 +1,0 @@
-%ifndef iofile_t
-%define iofile_t
-
-VAR
-  logOpened   : BOOLEAN
-
-%endif --iofile_t

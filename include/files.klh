@@ -1,5 +1,5 @@
-%ifndef iofile_h
-%define iofile_h
+%ifndef files_h
+%define files_h
 
 -- files
 ROUTINE logError(msg : STRING; dInt : INTEGER; errType : INTEGER) FROM iofile
@@ -19,4 +19,4 @@ ROUTINE createFile(filename : STRING; fl : FILE) : BOOLEAN FROM iofile
 ROUTINE file_to_arr(filename : STRING;  fl : FILE; out : ARRAY[*] OF STRING ; break_str: STRING) : BOOLEAN FROM iofile
 ROUTINE is_Lsfile(filename : STRING;  fl : FILE) : BOOLEAN FROM iofile
 
-%endif --iofile_h
+%endif --files_h

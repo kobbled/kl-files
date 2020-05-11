@@ -1,24 +1,24 @@
-PROGRAM iofile
+PROGRAM files
 %NOBUSYLAMP
-%COMMENT = 'logfile'
+%COMMENT = 'handle files/logs'
 %NOLOCKGROUP
 %NOPAUSE = COMMAND + TPENABLE + ERROR
 
-%INCLUDE display.c.klt
-%INCLUDE iofile.klt
+%include display.c.klt
+%include files.klt
 
-%INCLUDE strings.klh
-%INCLUDE iofile.private.klh
-%INCLUDE iofile.klh
-%INCLUDE display.klh
-%INCLUDE errors.klh
-%INCLUDE registers.klh
+%include strings.klh
+%include files.private.klh
+%include files.klh
+%include display.klh
+%include errors.klh
+%include registers.klh
 
 --fanuc utilities
-%INCLUDE klrdutil.kl
+%include klrdutil.kl
 
 BEGIN
-END iofile
+END files
 
 --### Private #####
 

@@ -1,12 +1,12 @@
 {
   "manver" : "1",
-  "project" : "iofile",
+  "project" : "files",
   "description" : "",
   "version" : "0.0.1",
   "license" : "MIT",
   "author" : "Kobbled",
   "source" : [
-    "src/iofile.kl"
+    "src/files.kl"
   ],
   "includes" : [
     "include"
