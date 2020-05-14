@@ -1,22 +1,35 @@
 %ifndef files_h
 %define files_h
 
+%include namespace.m
+
+%define prog_name files
+%define prog_name_alias file
+
+
+-- from registers
+
+
+-- namespaced members in format <prog_name_alias>__<func_name>
+declare(prog_name,open,prog_name_alias,open)
+declare(prog_name,close,prog_name_alias,close)
+declare(prog_name,check,prog_name_alias,check)
+declare(prog_name,log_message,prog_name_alias,logmsg)
+declare(prog_name,load_on_disk,prog_name_alias,load)
+declare(prog_name,create,prog_name_alias,create)
+declare(prog_name,read_to_sarr,prog_name_alias,r_sarr)
+declare(prog_name,is_LS,prog_name_alias,is_LS)
+
 -- files
-ROUTINE logError(msg : STRING; dInt : INTEGER; errType : INTEGER) FROM iofile
-ROUTINE logOpen(filename : STRING;  readWrite : STRING; fl : FILE) FROM iofile
-ROUTINE logClose(fl : FILE) FROM iofile
-ROUTINE logTime(fl : FILE) FROM iofile
-ROUTINE log_CR(fl : FILE) FROM iofile
-ROUTINE log_msg(fl: FILE; msg : STRING) FROM iofile
-ROUTINE log_numreg(fl: FILE; reg_no : INTEGER) FROM iofile
-ROUTINE log_posreg(fl: FILE; reg_no, grp_no : INTEGER) FROM iofile
-ROUTINE log_strreg(fl: FILE; reg_no : INTEGER) FROM iofile
-ROUTINE log_io(fl: FILE; typ : STRING; port_no : INTEGER) FROM iofile
-ROUTINE loadFile(filename : STRING ; overwrite : BOOLEAN) FROM iofile
-ROUTINE createFile(filename : STRING; fl : FILE) : BOOLEAN FROM iofile
+ROUTINE files__open(filename : STRING;  readWrite : STRING; fl : FILE) FROM files
+ROUTINE files__close(filename : STRING; fl : FILE) FROM files
+ROUTINE files__check(filename : STRING; fl : FILE) FROM files
+ROUTINE files__log_message(fl: FILE; severity: INTEGER;  msg : STRING) FROM files
+ROUTINE files__load_on_disk(filename : STRING ; overwrite : BOOLEAN) FROM files
+ROUTINE files__create(filename : STRING; fl : FILE) : BOOLEAN FROM files
 
 --conversions
-ROUTINE file_to_arr(filename : STRING;  fl : FILE; out : ARRAY[*] OF STRING ; break_str: STRING) : BOOLEAN FROM iofile
-ROUTINE is_Lsfile(filename : STRING;  fl : FILE) : BOOLEAN FROM iofile
+ROUTINE files__read_to_sarr(filename : STRING;  fl : FILE; out : ARRAY[*] OF STRING ; break_str: STRING) : BOOLEAN FROM files
+ROUTINE files__is_LS(filename : STRING;  fl : FILE) : BOOLEAN FROM files
 
 %endif --files_h

@@ -7,12 +7,11 @@ PROGRAM files
 %include display.c.klt
 %include files.klt
 
+
 %include strings.klh
-%include files.private.klh
 %include files.klh
 %include display.klh
 %include errors.klh
-%include registers.klh
 
 --fanuc utilities
 %include klrdutil.kl
@@ -20,87 +19,10 @@ PROGRAM files
 BEGIN
 END files
 
---### Private #####
-
-ROUTINE printTime
-  VAR
-    tme   : INTEGER
-    sec : INTEGER
-    str    : STRING[30]
-    secstr : STRING[4]
-  BEGIN
-      GET_TIME(tme)
-    CNV_TIME_STR(tme,str)
-      str = rstrip(str)
-      --get seconds
-      sec = tme AND 31
-      sec = sec * 2
-      
-      -- add to string
-      secstr = i_to_s(sec)
-      IF sec < 10 THEN
-          secstr = '0' + secstr
-      ENDIF
-      str = str + ':' + secstr
-
-      --add seconds
-      
-      RETURN(str)
-  END printTime
-
-ROUTINE logmsg2str_
-  VAR
-    severity : INTEGER
-    STATUS : INTEGER
-    entry: INTEGER
-    color : INTEGER
-    prefix : STRING[5]
-  BEGIN
-    -- uses set_severity from display
-    -- in program call set_severity first.
-    -- global severity is referenced in display
-    GET_VAR(entry, 'display', 'severity', severity, STATUS)
-    CHK_STAT(STATUS)
-    -- handle uninitialized variables
-    IF UNINIT(severity) THEN
-      set_severity(WARN)
-    ENDIF
-
-    -- get time
-    logTime(fl)
-    
-    --get other attributes from display
-    GET_VAR(entry, 'display', 'color', color, STATUS)
-    GET_VAR(entry, 'display', 'prefix', prefix, STATUS)
-    CHK_STAT(STATUS)
-
-    -- return
-    WRITE fl(
-        CHR(cc_bgcolor), CHR(color),
-        prefix,
-        CHR(cc_bgcolor), CHR(cc_dfcolor),
-        msg,
-        CR)
-  END logmsg2str_
-
 --### Public #####
 
-ROUTINE logError
-  BEGIN
-    SELECT errType OF
-      CASE(0):
-        WRITE TPERROR(CR, msg)
-      CASE(1):
-        WRITE TPERROR(msg)
-      CASE(2):
-        WRITE TPERROR(dInt)
-      CASE(3):
-        WRITE TPERROR(CR)
-    ENDSELECT
-  END logError
-
 --
-ROUTINE logOpen
+ROUTINE files__open
   -- readWrite: 'RO' - Read only
   --            'RW" - Read Write
   VAR
@@ -110,15 +32,23 @@ ROUTINE logOpen
     OPEN FILE fl(readWrite, filename)
     ec = IO_STATUS(fl)
     IF ec <> 0 THEN
-    logOpened = FALSE
-      logError('File'+ filename +'failed to open', 0,0)
-    ELSE
-    logOpened = TRUE
+      SELECT ec OF
+        CASE (FILE_NOT_OPENED):
+          karelError('File '+ filename +' not opened', ER_ABORT)
+        CASE (FILE_NOT_OPEN_PREDEF):
+          karelError('cannot open predefined file '+ filename, ER_ABORT)
+        CASE (FILE_OPEN_FAILED):
+          karelError('File '+ filename +' failed to open', ER_ABORT)
+        CASE (FILE_MULTIPLE_ACCESS):
+          karelError('File '+ filename +' already opened', ER_WARN)
+        ELSE:
+          karelError('Unhandled problem opening '+ filename, ER_ABORT)
+      ENDSELECT
     ENDIF 
-  END logOpen
+  END files__open
 
 --
-ROUTINE logClose
+ROUTINE files__close
   VAR
     ec    : INTEGER
   BEGIN
@@ -126,77 +56,63 @@ ROUTINE logClose
     CLOSE FILE fl
     ec = IO_STATUS(fl)
     IF ec <> 0 THEN
-      logError('Failed to close read file', 0,0)
-    ELSE
-    logOpened = FALSE
+      SELECT ec OF
+        CASE (FILE_NOT_OPENED):
+          karelError('File '+ filename +' is not open', ER_WARN)
+        CASE (FILE_CLOSE_FAILED):
+          karelError('File '+ filename +' could not close', ER_ABORT)
+        CASE (FILE_NOT_CLOSE_PREDEF):
+          karelError('Could not close predefined file '+ filename, ER_ABORT)
+        ELSE:
+          karelError('Unhandled problem closing'+ filename, ER_ABORT)
+      ENDSELECT
     ENDIF
-  END logClose
-
-ROUTINE logTime
-  VAR
-    tme   : INTEGER
-    str    : STRING[30]
-  BEGIN
-  IF logOpened THEN
-      str = printTime
-      WRITE fl(str)
-  ENDIF
-  END logTime
+  END files__close
 
 -- log a carriage return
-ROUTINE log_CR
+ROUTINE files__check
   VAR
     ec       : INTEGER
   BEGIN
-    IF logOpened THEN
-      WRITE fl(CR)
-      ec = IO_STATUS(fl)
-      IF ec <> 0 THEN 
-        logError('Failed to log CR', 0,0)
+    ec = IO_STATUS(fl)
+    IF ec <> 0 THEN 
+      SELECT ec OF
+        CASE (FILE_RAM_FULL):
+          karelError('Memory location of file ' + filename + ' is full', ER_WARN)
+        CASE (FILE_UNINIT):
+          karelError('File '+ filename +' is uninitialized', ER_ABORT)
+        CASE (FILE_MULTIPLE_ACCESS):
+          karelError('Multiple program have access to '+ filename, ER_WARN_STP)
+        CASE (FILE_READ_FAILED):
+          karelError('Could not read file '+ filename, ER_ABORT)
+        CASE (FILE_READ_IO_FAILED):
+          karelError('read IO failed for '+ filename, ER_ABORT)
+        CASE (FILE_READ_TO_SHORT):
+          karelError('read data is too short for file '+ filename, ER_ABORT)
+        CASE (FILE_READ_TIMEOUT):
+          karelError('read request timed out for '+ filename, ER_ABORT)
+        CASE (FILE_ILLEGAL_ASCII):
+          karelError('Illegal ASCII character in read for '+ filename, ER_ABORT)
+        CASE (FILE_WRITE_FAILED):
+          karelError('Could not write to file '+ filename, ER_ABORT)
+        CASE (FILE_WRITE_IO_FAILED):
+          karelError('write IO failed for '+ filename, ER_ABORT)
+        ELSE:
+          karelError('Unhandled issue with '+ filename, ER_ABORT)
+      ENDSELECT
     ENDIF
-    ENDIF
-  END log_CR
+  END files__check
 
--- log debug or info message
-ROUTINE log_msg
+-- log debug, info, warning, or error message
+ROUTINE files__log_message
   BEGIN
-    logmsg2str_(fl, msg)
-  END log_msg
-
--- log debug or info message
-ROUTINE log_numreg
-  VAR
-    msg : STRING[25]
-  BEGIN
-    msg = 'R['+ i_to_s(reg_no) + '] = ' + numreg_to_s(reg_no)
-    logmsg2str_(fl, msg)
-  END log_numreg
-
--- log debug or info message
-ROUTINE log_posreg
-  VAR
-    pr_str : STRING[10]
-  BEGIN
-    pr_str = 'PR['+ i_to_s(reg_no) + '] = '
-    logmsg2str_(fl, pr_str)
-    -- put on new line
-    WRITE fl(posreg_to_s(reg_no, grp_no))
-  END log_posreg
-
-ROUTINE log_strreg
-  BEGIN
-    logmsg2str_(fl,'SR['+ i_to_s(reg_no) + '] = ' + GET_SR(reg_no))
-  END log_strreg
-
-ROUTINE log_io
-  VAR
-    port_type : INTEGER
-  BEGIN
-    logmsg2str_(fl, typ + '['+ i_to_s(port_no) + '] = ' + i_to_s(GET_IO(typ, port_no)))
-  END log_io
+    display__set_severity(severity)
+    display__set_message(msg)
+    WRITE fl( display__get_message )
+  END files__log_message
 
 
-ROUTINE loadFile
+ROUTINE files__load_on_disk
   VAR
     stat : INTEGER
   BEGIN
@@ -207,12 +123,12 @@ ROUTINE loadFile
     ENDIF
 
     IF stat <> 0 THEN
-      logError('Error: ' + i_to_s(stat), 0, 0)
+      karelError('Error ' + i_to_s(stat) + ' trying to load ' + filename, ER_ABORT)
     ENDIF
-  END loadFile
+  END files__load_on_disk
 
 --
-ROUTINE createFile
+ROUTINE files__create
   VAR
     STATUS 	  : INTEGER
     exists	  : BOOLEAN
@@ -225,32 +141,34 @@ ROUTINE createFile
     -- reopen as a RW file input blank line then exit
     -- to create the file
     IF STATUS <> 0 THEN
-      LogOpen(filename, 'RW', fl)
+      files__open(filename, 'RW', fl)
       WRITE fl(CR,CR)
-      LogClose(fl)
+      files__close(filename, fl)
       RETURN(TRUE)
     ELSE
-      LogClose(fl)
+      files__close(filename, fl)
       RETURN(FALSE)
     ENDIF 
-  END createFile
+  END files__create
 
 
 -- read any file into a string array
 -- for further processing
-ROUTINE file_to_arr
+ROUTINE files__read_to_sarr
   VAR
     dumStr  : STRING[30]
     i     : INTEGER
     b     : BOOLEAN
   BEGIN
     dumStr = ''
-    LogOpen(filename, 'RO', fl)
+    files__open(filename, 'RO', fl)
     i = 1
     FOR i=1 TO ARRAY_LEN(out) DO
       -- line by line go through read file
       -- output into an array
       READ fl(out[i])
+      files__check(filename, fl)
+
       IF UNINIT(out[i]) THEN
         karelError('ERROR, invalid Program' + filename + '. Unable to read.', ER_ABORT)
       ENDIF
@@ -258,7 +176,7 @@ ROUTINE file_to_arr
       IF (NOT UNINIT(break_str)) OR (break_str <> '') THEN
         b = search_str(out[i], break_str)
         IF b THEN
-          LogClose(fl)
+          files__close(filename, fl)
           RETURN(TRUE)
         ENDIF
       ENDIF
@@ -268,12 +186,12 @@ ROUTINE file_to_arr
       karelError('String array was not large enough to store ' + filename, ER_WARN)
     ENDIF
 
-    LogClose(fl)
+    files__close(filename, fl)
     RETURN(FALSE)
-  END file_to_arr
+  END files__read_to_sarr
 
 -- Determine if a file is an LS file
-ROUTINE is_Lsfile
+ROUTINE files__is_LS
   VAR
     dumStr	 : STRING[30]
     line  : STRING[127]
@@ -282,12 +200,13 @@ ROUTINE is_Lsfile
     -- initialize variables
     dumStr = ''
     b = FALSE
-    LogOpen(filename, 'RO', fl)
+    files__open(filename, 'RO', fl)
     -- loop through file line by line
     -- if '/MN' is found in the file
     -- it is regarded as an LS file
     WHILE dumStr <> '/MN' DO
       READ fl(line)
+      files__check(filename, fl)
       IF UNINIT(line) THEN
         karelError('ERROR, invalid Program' + filename + '. Unable to read.', ER_ABORT)
       ENDIF
@@ -304,8 +223,8 @@ ROUTINE is_Lsfile
     ENDIF
     -- close file
     BREAK::
-    LogClose(fl)
+    files__close(filename, fl)
 
     RETURN(b)
-  END is_Lsfile
+  END files__is_LS
 

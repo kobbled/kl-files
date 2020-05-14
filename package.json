@@ -14,8 +14,8 @@
   "depends" : [
     "errors",
     "display",
-    "registers",
     "Strings",
-    "KUnit"
+    "KUnit",
+    "ktransw-macros"
   ]
 }
