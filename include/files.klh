@@ -7,29 +7,37 @@
 %define prog_name_alias file
 
 
--- from registers
-
-
 -- namespaced members in format <prog_name_alias>__<func_name>
 declare(prog_name,open,prog_name_alias,open)
 declare(prog_name,close,prog_name_alias,close)
-declare(prog_name,check,prog_name_alias,check)
+declare(prog_name,check_open,prog_name_alias,chckopn)
+declare(prog_name,check_closed,prog_name_alias,chckcls)
+declare(prog_name,check_rw,prog_name_alias,checkrw)
 declare(prog_name,log_message,prog_name_alias,logmsg)
 declare(prog_name,load_on_disk,prog_name_alias,load)
 declare(prog_name,create,prog_name_alias,create)
+declare(prog_name,readline,prog_name_alias,readlne)
 declare(prog_name,read_to_sarr,prog_name_alias,r_sarr)
+declare(prog_name,copy_pipe,prog_name_alias,copypip)
 declare(prog_name,is_LS,prog_name_alias,is_LS)
 
+--access_typ can be 'RW', 'RO', 'AP', 'UD'
 -- files
-ROUTINE files__open(filename : STRING;  readWrite : STRING; fl : FILE) FROM files
+ROUTINE files__open(filename : STRING;  access_typ : STRING; fl : FILE) FROM files
 ROUTINE files__close(filename : STRING; fl : FILE) FROM files
-ROUTINE files__check(filename : STRING; fl : FILE) FROM files
+ROUTINE files__check_open(filename : STRING; fl : FILE) FROM files
+ROUTINE files__check_closed(filename : STRING; fl : FILE) FROM files
+ROUTINE files__check_rw(filename : STRING; fl : FILE) FROM files
 ROUTINE files__log_message(fl: FILE; severity: INTEGER;  msg : STRING) FROM files
 ROUTINE files__load_on_disk(filename : STRING ; overwrite : BOOLEAN) FROM files
 ROUTINE files__create(filename : STRING; fl : FILE) : BOOLEAN FROM files
-
---conversions
+--read
 ROUTINE files__read_to_sarr(filename : STRING;  fl : FILE; out : ARRAY[*] OF STRING ; break_str: STRING) : BOOLEAN FROM files
+ROUTINE files_copy_pipe(pipname : STRING; pip_fl : FILE;  &
+                        filename : STRING; write_fl : FILE; & 
+                        access_typ : STRING) FROM files
+
+--type check
 ROUTINE files__is_LS(filename : STRING;  fl : FILE) : BOOLEAN FROM files
 
 %endif --files_h

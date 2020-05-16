@@ -23,13 +23,31 @@ END files
 
 --
 ROUTINE files__open
-  -- readWrite: 'RO' - Read only
-  --            'RW" - Read Write
+  -- access_typ: 'RO' - Read only
+  --            'RW' - Read Write
+  --            'AP' - Append at end of file
+  --            'UD' - Update from beginning of file
   VAR
     ec       : INTEGER
   BEGIN
     CLR_IO_STAT(fl)
-    OPEN FILE fl(readWrite, filename)
+    OPEN FILE fl(access_typ, filename)
+    files__check_open(filename, fl)
+  END files__open
+
+--
+ROUTINE files__close
+  VAR
+    ec    : INTEGER
+  BEGIN
+    CLR_IO_STAT(fl)
+    CLOSE FILE fl
+    files__check_closed(filename, fl)
+  END files__close
+
+
+ROUTINE files__check_open
+  BEGIN
     ec = IO_STATUS(fl)
     IF ec <> 0 THEN
       SELECT ec OF
@@ -45,15 +63,11 @@ ROUTINE files__open
           karelError('Unhandled problem opening '+ filename, ER_ABORT)
       ENDSELECT
     ENDIF 
-  END files__open
+  END files__check_open
 
---
-ROUTINE files__close
-  VAR
-    ec    : INTEGER
+
+ROUTINE files__check_closed
   BEGIN
-    CLR_IO_STAT(fl)
-    CLOSE FILE fl
     ec = IO_STATUS(fl)
     IF ec <> 0 THEN
       SELECT ec OF
@@ -67,10 +81,9 @@ ROUTINE files__close
           karelError('Unhandled problem closing'+ filename, ER_ABORT)
       ENDSELECT
     ENDIF
-  END files__close
+  END files__check_closed
 
--- log a carriage return
-ROUTINE files__check
+ROUTINE files__check_rw
   VAR
     ec       : INTEGER
   BEGIN
@@ -189,6 +202,47 @@ ROUTINE files__read_to_sarr
     files__close(filename, fl)
     RETURN(FALSE)
   END files__read_to_sarr
+
+
+ROUTINE files_copy_pipe
+  VAR
+    n_bytes : INTEGER
+    status  : INTEGER
+    store_s : STRING[254]
+  BEGIN
+    --check if write file is open
+    status = IO_STATUS(write_fl)
+    --if not open
+    IF STATUS <> 0 THEN
+      files__open(filename, access_typ, write_fl)
+    ENDIF
+
+    --check if write pipe file is open
+    status = IO_STATUS(pip_fl)
+    --if not open
+    IF STATUS <> 0 THEN
+      files__open(pipname, 'RO', pip_fl)
+    ENDIF
+
+    --start reading pipe
+    --read how many bytes in buffer
+    --max buffer is 256 Bytes
+    BYTES_AHEAD(pip_fl, n_bytes, status)
+    WHILE n_bytes > 0 DO
+      READ pip_fl (store_s::n_bytes::0)
+      WRITE write_fl (store_s)
+      BYTES_AHEAD(pip_fl, n_bytes, status)
+    ENDWHILE
+
+    --close the pipe at eof
+    files__close(pipname, pip_fl)
+
+    --close write file
+    files__close(filename, write_fl)
+
+  END files_copy_pipe
+
+
 
 -- Determine if a file is an LS file
 ROUTINE files__is_LS

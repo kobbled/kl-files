@@ -19,7 +19,4 @@ CONST
   FILE_CLOSE_FAILED = 12338
   FILE_NOT_CLOSE_PREDEF = 12336
 
-
-
-
 %endif --files_t
