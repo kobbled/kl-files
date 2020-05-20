@@ -47,6 +47,8 @@ ROUTINE files__close
 
 
 ROUTINE files__check_open
+  VAR
+    ec       : INTEGER
   BEGIN
     ec = IO_STATUS(fl)
     IF ec <> 0 THEN
@@ -67,6 +69,8 @@ ROUTINE files__check_open
 
 
 ROUTINE files__check_closed
+  VAR
+    ec       : INTEGER
   BEGIN
     ec = IO_STATUS(fl)
     IF ec <> 0 THEN
@@ -114,7 +118,7 @@ ROUTINE files__check_rw
           karelError('Unhandled issue with '+ filename, ER_ABORT)
       ENDSELECT
     ENDIF
-  END files__check
+  END files__check_rw
 
 -- log debug, info, warning, or error message
 ROUTINE files__log_message
@@ -180,7 +184,7 @@ ROUTINE files__read_to_sarr
       -- line by line go through read file
       -- output into an array
       READ fl(out[i])
-      files__check(filename, fl)
+      files__check_rw(filename, fl)
 
       IF UNINIT(out[i]) THEN
         karelError('ERROR, invalid Program' + filename + '. Unable to read.', ER_ABORT)
@@ -260,7 +264,7 @@ ROUTINE files__is_LS
     -- it is regarded as an LS file
     WHILE dumStr <> '/MN' DO
       READ fl(line)
-      files__check(filename, fl)
+      files__check_rw(filename, fl)
       IF UNINIT(line) THEN
         karelError('ERROR, invalid Program' + filename + '. Unable to read.', ER_ABORT)
       ENDIF
