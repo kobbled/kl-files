@@ -40,7 +40,6 @@ ROUTINE files__close
   VAR
     ec    : INTEGER
   BEGIN
-    CLR_IO_STAT(fl)
     CLOSE FILE fl
     files__check_closed(filename, fl)
   END files__close
@@ -159,7 +158,7 @@ ROUTINE files__create
     -- to create the file
     IF STATUS <> 0 THEN
       files__open(filename, 'RW', fl)
-      WRITE fl(CR,CR)
+      WRITE fl('')
       files__close(filename, fl)
       RETURN(TRUE)
     ELSE
@@ -168,6 +167,17 @@ ROUTINE files__create
     ENDIF 
   END files__create
 
+ROUTINE files__clear
+  VAR
+    status : INTEGER
+  BEGIN
+    CLR_IO_STAT(fl)
+    IF IO_STATUS(fl) <> 0 THEN CLOSE FILE fl; ENDIF
+
+    OPEN FILE fl ('RW', filename)
+    CLOSE FILE fl
+
+  END files__clear
 
 -- read any file into a string array
 -- for further processing
@@ -208,7 +218,7 @@ ROUTINE files__read_to_sarr
   END files__read_to_sarr
 
 
-ROUTINE files_copy_pipe
+ROUTINE files__copy_pipe
   VAR
     n_bytes : INTEGER
     status  : INTEGER
@@ -244,7 +254,7 @@ ROUTINE files_copy_pipe
     --close write file
     files__close(filename, write_fl)
 
-  END files_copy_pipe
+  END files__copy_pipe
 
 
 
