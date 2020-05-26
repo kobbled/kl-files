@@ -32,7 +32,7 @@ ROUTINE files__check_rw(filename : STRING; fl : FILE) FROM files
 ROUTINE files__log_message(fl: FILE; severity: INTEGER;  msg : STRING) FROM files
 ROUTINE files__load_on_disk(filename : STRING ; overwrite : BOOLEAN) FROM files
 ROUTINE files__create(filename : STRING; fl : FILE) : BOOLEAN FROM files
-ROUTINE files__clear(filename : STRING; fl : FILE) : BOOLEAN FROM files
+ROUTINE files__clear(filename : STRING; fl : FILE) FROM files
 --read
 ROUTINE files__read_to_sarr(filename : STRING;  fl : FILE; out : ARRAY[*] OF STRING ; break_str: STRING) : BOOLEAN FROM files
 ROUTINE files__copy_pipe(pipname : STRING; pip_fl : FILE;  &
