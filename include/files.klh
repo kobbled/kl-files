@@ -8,6 +8,7 @@
 
 
 -- namespaced members in format <prog_name_alias>__<func_name>
+-- opts
 declare(prog_name,open,prog_name_alias,open)
 declare(prog_name,close,prog_name_alias,close)
 declare(prog_name,check_open,prog_name_alias,chckopn)
@@ -17,13 +18,17 @@ declare(prog_name,log_message,prog_name_alias,logmsg)
 declare(prog_name,load_on_disk,prog_name_alias,load)
 declare(prog_name,create,prog_name_alias,create)
 declare(prog_name,clear,prog_name_alias,clear)
-declare(prog_name,readline,prog_name_alias,readlne)
+--read
+declare(prog_name,read_line,prog_name_alias,rdline)
 declare(prog_name,read_to_sarr,prog_name_alias,r_sarr)
-declare(prog_name,copy_pipe,prog_name_alias,copypip)
+--write
+declare(prog_name,write_pipe,prog_name_alias,wrtpipe)
+declare(prog_name,write_display,prog_name_alias,wrtdisp)
+--type check
 declare(prog_name,is_LS,prog_name_alias,is_LS)
 
 --access_typ can be 'RW', 'RO', 'AP', 'UD'
--- files
+-- opts
 ROUTINE files__open(filename : STRING;  access_typ : STRING; fl : FILE) FROM files
 ROUTINE files__close(filename : STRING; fl : FILE) FROM files
 ROUTINE files__check_open(filename : STRING; fl : FILE) FROM files
@@ -34,10 +39,13 @@ ROUTINE files__load_on_disk(filename : STRING ; overwrite : BOOLEAN) FROM files
 ROUTINE files__create(filename : STRING; fl : FILE) : BOOLEAN FROM files
 ROUTINE files__clear(filename : STRING; fl : FILE) FROM files
 --read
+ROUTINE files__read_line(filename : STRING; fl : FILE) : STRING FROM files
 ROUTINE files__read_to_sarr(filename : STRING;  fl : FILE; out : ARRAY[*] OF STRING ; break_str: STRING) : BOOLEAN FROM files
-ROUTINE files__copy_pipe(pipname : STRING; pip_fl : FILE;  &
+--write
+ROUTINE files__write_pipe(pipname : STRING; pip_fl : FILE;  &
                         filename : STRING; write_fl : FILE; & 
                         access_typ : STRING) FROM files
+ROUTINE files__write_display(filename : STRING;  fl : FILE) FROM files
 
 --type check
 ROUTINE files__is_LS(filename : STRING;  fl : FILE) : BOOLEAN FROM files

@@ -44,6 +44,32 @@ ROUTINE files__close
     files__check_closed(filename, fl)
   END files__close
 
+ROUTINE files__read_line
+  VAR
+    str : STRING[127]
+    buf : INTEGER
+    status : INTEGER
+  BEGIN
+    --check that file is open
+    files__check_open(filename, fl)
+
+    --see if there is still data to read
+    BYTES_AHEAD(fl, buf, status)
+
+    --close file if BYTES_AHEAD fails
+    IF status <> 0 THEN
+      CLOSE FILE fl
+    ENDIF
+
+    IF buf > 0 THEN
+      --read line
+      READ fl (str)
+    ENDIF
+
+    RETURN(str)
+
+  END files__read_line
+
 
 ROUTINE files__check_open
   VAR
@@ -218,29 +244,21 @@ ROUTINE files__read_to_sarr
   END files__read_to_sarr
 
 
-ROUTINE files__copy_pipe
+ROUTINE files__write_pipe
   VAR
     n_bytes : INTEGER
     status  : INTEGER
-    store_s : STRING[254]
+    store_s : STRING[127]
   BEGIN
-    --check if write file is open
-    status = IO_STATUS(write_fl)
-    --if not open
-    IF STATUS <> 0 THEN
-      files__open(filename, access_typ, write_fl)
-    ENDIF
+    --open write file
+    files__open(filename, access_typ, write_fl)
 
-    --check if write pipe file is open
-    status = IO_STATUS(pip_fl)
-    --if not open
-    IF STATUS <> 0 THEN
-      files__open(pipname, 'RO', pip_fl)
-    ENDIF
+    --open pipe file
+    files__open(pipname, 'RO', pip_fl)
 
     --start reading pipe
     --read how many bytes in buffer
-    --max buffer is 256 Bytes
+    --max buffer is 127 Bytes
     BYTES_AHEAD(pip_fl, n_bytes, status)
     WHILE n_bytes > 0 DO
       READ pip_fl (store_s::n_bytes::0)
@@ -254,9 +272,33 @@ ROUTINE files__copy_pipe
     --close write file
     files__close(filename, write_fl)
 
-  END files__copy_pipe
+  END files__write_pipe
 
 
+ROUTINE files__write_display
+  VAR
+    n_bytes : INTEGER
+    status  : INTEGER
+    store_s : STRING[127]
+  BEGIN
+
+    files__open(filename, 'RO', fl)
+
+    --start reading pipe
+    --read how many bytes in buffer
+    --max buffer is 127 Bytes
+    BYTES_AHEAD(fl, n_bytes, status)
+
+    WHILE n_bytes > 0 DO
+      READ fl (store_s::n_bytes::0)
+      WRITE TPDISPLAY (store_s)
+      BYTES_AHEAD(fl, n_bytes, status)
+    ENDWHILE
+
+    --close the pipe at eof
+    files__close(filename, fl)
+
+  END files__write_display
 
 -- Determine if a file is an LS file
 ROUTINE files__is_LS
