@@ -49,24 +49,25 @@ ROUTINE files__read_line
     str : STRING[127]
     buf : INTEGER
     status : INTEGER
+    ec : INTEGER
   BEGIN
     --check that file is open
     files__check_open(filename, fl)
 
-    --see if there is still data to read
-    BYTES_AHEAD(fl, buf, status)
-
-    --close file if BYTES_AHEAD fails
-    IF status <> 0 THEN
-      CLOSE FILE fl
-    ENDIF
-
-    IF buf > 0 THEN
-      --read line
-      READ fl (str)
-    ENDIF
-
-    RETURN(str)
+    ec = IO_STATUS(fl)
+    SELECT ec OF
+      CASE(0):
+        READ fl (str)
+        IF UNINIT(str) THEN
+          RETURN('')
+        ELSE
+          RETURN(str)
+        ENDIF
+      CASE(FILE_RAM_FULL):
+        RETURN('EOF')
+      ELSE:
+        RETURN('')
+    ENDSELECT
 
   END files__read_line
 
@@ -79,15 +80,17 @@ ROUTINE files__check_open
     IF ec <> 0 THEN
       SELECT ec OF
         CASE (FILE_NOT_OPENED):
-          karelError('File '+ filename +' not opened', ER_ABORT)
+          karelError(ec,'File '+ filename +' not opened', ER_ABORT)
         CASE (FILE_NOT_OPEN_PREDEF):
-          karelError('cannot open predefined file '+ filename, ER_ABORT)
+          karelError(ec,'cannot open predefined file '+ filename, ER_ABORT)
         CASE (FILE_OPEN_FAILED):
-          karelError('File '+ filename +' failed to open', ER_ABORT)
+          karelError(ec,'File '+ filename +' failed to open', ER_ABORT)
         CASE (FILE_MULTIPLE_ACCESS):
-          karelError('File '+ filename +' already opened', ER_WARN)
+          karelError(ec,'File '+ filename +' already opened', ER_WARN)
+        CASE (FILE_RAM_FULL):
+          WRITE TPDISPLAY(filename, ' EOF', CR)
         ELSE:
-          karelError('Unhandled problem opening '+ filename, ER_ABORT)
+          karelError(ec,'Unhandled problem opening '+ filename, ER_ABORT)
       ENDSELECT
     ENDIF 
   END files__check_open
@@ -101,13 +104,13 @@ ROUTINE files__check_closed
     IF ec <> 0 THEN
       SELECT ec OF
         CASE (FILE_NOT_OPENED):
-          karelError('File '+ filename +' is not open', ER_WARN)
+          karelError(ec,'File '+ filename +' is not open', ER_WARN)
         CASE (FILE_CLOSE_FAILED):
-          karelError('File '+ filename +' could not close', ER_ABORT)
+          karelError(ec,'File '+ filename +' could not close', ER_ABORT)
         CASE (FILE_NOT_CLOSE_PREDEF):
-          karelError('Could not close predefined file '+ filename, ER_ABORT)
+          karelError(ec,'Could not close predefined file '+ filename, ER_ABORT)
         ELSE:
-          karelError('Unhandled problem closing'+ filename, ER_ABORT)
+          karelError(ec,'Unhandled problem closing'+ filename, ER_ABORT)
       ENDSELECT
     ENDIF
   END files__check_closed
@@ -120,27 +123,27 @@ ROUTINE files__check_rw
     IF ec <> 0 THEN 
       SELECT ec OF
         CASE (FILE_RAM_FULL):
-          karelError('Memory location of file ' + filename + ' is full', ER_WARN)
+          karelError(ec,'Memory location of file ' + filename + ' is full', ER_WARN)
         CASE (FILE_UNINIT):
-          karelError('File '+ filename +' is uninitialized', ER_ABORT)
+          karelError(ec,'File '+ filename +' is uninitialized', ER_ABORT)
         CASE (FILE_MULTIPLE_ACCESS):
-          karelError('Multiple program have access to '+ filename, ER_WARN_STP)
+          karelError(ec,'Multiple program have access to '+ filename, ER_WARN_STP)
         CASE (FILE_READ_FAILED):
-          karelError('Could not read file '+ filename, ER_ABORT)
+          karelError(ec,'Could not read file '+ filename, ER_ABORT)
         CASE (FILE_READ_IO_FAILED):
-          karelError('read IO failed for '+ filename, ER_ABORT)
+          karelError(ec,'read IO failed for '+ filename, ER_ABORT)
         CASE (FILE_READ_TO_SHORT):
-          karelError('read data is too short for file '+ filename, ER_ABORT)
+          karelError(ec,'read data is too short for file '+ filename, ER_ABORT)
         CASE (FILE_READ_TIMEOUT):
-          karelError('read request timed out for '+ filename, ER_ABORT)
+          karelError(ec,'read request timed out for '+ filename, ER_ABORT)
         CASE (FILE_ILLEGAL_ASCII):
-          karelError('Illegal ASCII character in read for '+ filename, ER_ABORT)
+          karelError(ec,'Illegal ASCII character in read for '+ filename, ER_ABORT)
         CASE (FILE_WRITE_FAILED):
-          karelError('Could not write to file '+ filename, ER_ABORT)
+          karelError(ec,'Could not write to file '+ filename, ER_ABORT)
         CASE (FILE_WRITE_IO_FAILED):
-          karelError('write IO failed for '+ filename, ER_ABORT)
+          karelError(ec,'write IO failed for '+ filename, ER_ABORT)
         ELSE:
-          karelError('Unhandled issue with '+ filename, ER_ABORT)
+          karelError(ec,'Unhandled issue with '+ filename, ER_ABORT)
       ENDSELECT
     ENDIF
   END files__check_rw
@@ -165,7 +168,7 @@ ROUTINE files__load_on_disk
     ENDIF
 
     IF stat <> 0 THEN
-      karelError('Error ' + i_to_s(stat) + ' trying to load ' + filename, ER_ABORT)
+      karelError(stat, 'Error trying to load ' + filename, ER_ABORT)
     ENDIF
   END files__load_on_disk
 
@@ -223,7 +226,7 @@ ROUTINE files__read_to_sarr
       files__check_rw(filename, fl)
 
       IF UNINIT(out[i]) THEN
-        karelError('ERROR, invalid Program' + filename + '. Unable to read.', ER_ABORT)
+        karelError(CANT_READ,'ERROR, invalid Program' + filename + '. Unable to read.', ER_ABORT)
       ENDIF
       -- evaluate if line contains the break keyword
       IF (NOT UNINIT(break_str)) OR (break_str <> '') THEN
@@ -236,7 +239,7 @@ ROUTINE files__read_to_sarr
     ENDFOR
 
     IF (BYTES_LEFT(fl) > 0) THEN
-      karelError('String array was not large enough to store ' + filename, ER_WARN)
+      karelError(STR_TOO_LONG,'String array was not large enough to store ' + filename, ER_WARN)
     ENDIF
 
     files__close(filename, fl)
@@ -244,14 +247,14 @@ ROUTINE files__read_to_sarr
   END files__read_to_sarr
 
 
-ROUTINE files__write_pipe
+ROUTINE files__write_from_pipe
   VAR
     n_bytes : INTEGER
     status  : INTEGER
     store_s : STRING[127]
   BEGIN
     --open write file
-    files__open(filename, access_typ, write_fl)
+    files__open(filename, 'AP', write_fl)
 
     --open pipe file
     files__open(pipname, 'RO', pip_fl)
@@ -272,10 +275,10 @@ ROUTINE files__write_pipe
     --close write file
     files__close(filename, write_fl)
 
-  END files__write_pipe
+  END files__write_from_pipe
 
 
-ROUTINE files__write_display
+ROUTINE files__write_to_display
   VAR
     n_bytes : INTEGER
     status  : INTEGER
@@ -298,7 +301,7 @@ ROUTINE files__write_display
     --close the pipe at eof
     files__close(filename, fl)
 
-  END files__write_display
+  END files__write_to_display
 
 -- Determine if a file is an LS file
 ROUTINE files__is_LS
@@ -318,7 +321,7 @@ ROUTINE files__is_LS
       READ fl(line)
       files__check_rw(filename, fl)
       IF UNINIT(line) THEN
-        karelError('ERROR, invalid Program' + filename + '. Unable to read.', ER_ABORT)
+        karelError(CANT_READ,'ERROR, invalid Program' + filename + '. Unable to read.', ER_ABORT)
       ENDIF
       dumStr = SUB_STR(line, 1, 3)
       -- if there is nothing else to read

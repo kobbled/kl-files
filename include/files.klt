@@ -18,4 +18,7 @@
 %define FILE_CLOSE_FAILED 12338
 %define FILE_NOT_CLOSE_PREDEF 12336
 
+CONST
+  MAX_PIPE = 500 --maximum number of lines allowed in a pipe
+
 %endif --files_t

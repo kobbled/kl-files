@@ -22,8 +22,8 @@ declare(prog_name,clear,prog_name_alias,clear)
 declare(prog_name,read_line,prog_name_alias,rdline)
 declare(prog_name,read_to_sarr,prog_name_alias,r_sarr)
 --write
-declare(prog_name,write_pipe,prog_name_alias,wrtpipe)
-declare(prog_name,write_display,prog_name_alias,wrtdisp)
+declare(prog_name,write_from_pipe,prog_name_alias,wrtfpip)
+declare(prog_name,write_to_display,prog_name_alias,wrtdisp)
 --type check
 declare(prog_name,is_LS,prog_name_alias,is_LS)
 
@@ -42,10 +42,9 @@ ROUTINE files__clear(filename : STRING; fl : FILE) FROM files
 ROUTINE files__read_line(filename : STRING; fl : FILE) : STRING FROM files
 ROUTINE files__read_to_sarr(filename : STRING;  fl : FILE; out : ARRAY[*] OF STRING ; break_str: STRING) : BOOLEAN FROM files
 --write
-ROUTINE files__write_pipe(pipname : STRING; pip_fl : FILE;  &
-                        filename : STRING; write_fl : FILE; & 
-                        access_typ : STRING) FROM files
-ROUTINE files__write_display(filename : STRING;  fl : FILE) FROM files
+ROUTINE files__write_from_pipe(pipname : STRING; pip_fl : FILE;  &
+                        filename : STRING; write_fl : FILE) FROM files
+ROUTINE files__write_to_display(filename : STRING;  fl : FILE) FROM files
 
 --type check
 ROUTINE files__is_LS(filename : STRING;  fl : FILE) : BOOLEAN FROM files
