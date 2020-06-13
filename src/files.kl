@@ -4,13 +4,11 @@ PROGRAM files
 %NOLOCKGROUP
 %NOPAUSE = COMMAND + TPENABLE + ERROR
 
-%include display.c.klt
+%include errors.klt
 %include files.klt
-
 
 %include strings.klh
 %include files.klh
-%include display.klh
 %include errors.klh
 
 --fanuc utilities
@@ -148,15 +146,6 @@ ROUTINE files__check_rw
     ENDIF
   END files__check_rw
 
--- log debug, info, warning, or error message
-ROUTINE files__log_message
-  BEGIN
-    display__set_severity(severity)
-    display__set_message(msg)
-    WRITE fl( display__get_message )
-  END files__log_message
-
-
 ROUTINE files__load_on_disk
   VAR
     stat : INTEGER
@@ -246,6 +235,19 @@ ROUTINE files__read_to_sarr
     RETURN(FALSE)
   END files__read_to_sarr
 
+
+ROUTINE files__write
+  BEGIN
+    -- write to pipe
+    OPEN FILE fl ('AP', filename)
+    --write string
+    WRITE fl(str)
+    IF (str <> '') THEN
+      WRITE fl(CR)
+    ENDIF
+
+    CLOSE FILE fl
+  END files__write
 
 ROUTINE files__write_from_pipe
   VAR
