@@ -193,7 +193,7 @@ ROUTINE files__clear
     IF IO_STATUS(fl) <> 0 THEN CLOSE FILE fl; ENDIF
 
     OPEN FILE fl ('RW', filename)
-    CLOSE FILE fl
+    files__close(filename, fl) 
 
   END files__clear
 
@@ -256,7 +256,11 @@ ROUTINE files__write_from_pipe
     store_s : STRING[127]
   BEGIN
     --open write file
-    files__open(filename, 'AP', write_fl)
+    IF handle_file THEN
+      files__open(filename, 'AP', write_fl)
+    ELSE
+      files__check_open(filename, write_fl)
+    ENDIF
 
     --open pipe file
     files__open(pipname, 'RO', pip_fl)
@@ -275,7 +279,9 @@ ROUTINE files__write_from_pipe
     files__close(pipname, pip_fl)
 
     --close write file
-    files__close(filename, write_fl)
+    IF handle_file THEN
+      files__close(filename, write_fl)
+    ENDIF
 
   END files__write_from_pipe
 

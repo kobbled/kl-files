@@ -34,7 +34,7 @@ declare_function(prog_name,write,prog_name_alias,write)
 ROUTINE files__write(str : STRING; filename : STRING; fl : FILE) FROM files
 declare_function(prog_name,write_from_pipe,prog_name_alias,wrtfpip)
 ROUTINE files__write_from_pipe(pipname : STRING; pip_fl : FILE;  &
-                        filename : STRING; write_fl : FILE) FROM files
+                        filename : STRING; write_fl : FILE; handle_file : BOOLEAN) FROM files
 declare_function(prog_name,write_to_display,prog_name_alias,wrtdisp)
 ROUTINE files__write_to_display(filename : STRING;  fl : FILE) FROM files
 
