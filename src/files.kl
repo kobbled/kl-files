@@ -7,7 +7,7 @@ PROGRAM files
 %include errors.klt
 %include files.klt
 
-%include strings.klh
+%from strings.klh %import search_str
 %include files.klh
 %include errors.klh
 
