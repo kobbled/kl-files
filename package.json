@@ -14,7 +14,9 @@
   "depends" : [
     "errors",
     "Strings",
-    "KUnit",
     "ktransw-macros"
+  ],
+  "tests-depends" : [
+    "KUnit"
   ]
 }
