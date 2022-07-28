@@ -35,6 +35,10 @@ declare_function(prog_name,read_line_ref,prog_name_alias,rdlinr)
 ROUTINE files__read_line_ref(filename : STRING; fl : FILE; out_str : STRING) FROM files
 declare_function(prog_name,read_to_sarr,prog_name_alias,r_sarr)
 ROUTINE files__read_to_sarr(filename : STRING;  fl : FILE; out : ARRAY[*] OF STRING ; break_str: STRING) : BOOLEAN FROM files
+declare_function(prog_name,read_type,prog_name_alias,rdtp)
+ROUTINE files__read_type(parse_str : STRING; split : STRING; offset : INTEGER; size : INTEGER; &
+                         typ : INTEGER; out_struct : t_DATA_TYPE; & 
+                         out_real_arr : ARRAY[*] OF REAL; out_int_arr : ARRAY[*] OF INTEGER; out_str_arr : ARRAY[*] OF STRING) FROM files
 --write
 declare_function(prog_name,write,prog_name_alias,write)
 ROUTINE files__write(str : STRING; filename : STRING; fl : FILE) FROM files

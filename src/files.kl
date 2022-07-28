@@ -290,6 +290,38 @@ ROUTINE files__read_to_sarr
     RETURN(FALSE)
   END files__read_to_sarr
 
+ROUTINE files__read_type
+  BEGIN
+
+    --split
+
+    SELECT typ OF
+      CASE(C_INT):
+        out_struct.int = s_to_i(extract_str(parse_str, split, offset, offset))
+      CASE(C_REAL):
+        out_struct.rl = s_to_r(extract_str(parse_str, split, offset, offset))
+      CASE(C_STR):
+        out_struct.str = extract_str(parse_str, split, offset, offset+size-1)
+      CASE(C_BOOL):
+        out_struct.bool = s_to_b(extract_str(parse_str, split, offset, offset))
+      CASE(C_VEC):
+        out_struct.vec = s_to_vec(extract_str(parse_str, split, offset, offset+3-1), split)
+      CASE(C_POS):
+        out_struct.pos = s_to_xyzwpr(extract_str(parse_str, split, offset, offset+6-1), split)
+      CASE(C_CONFIG):
+        out_struct.cnfg = s_to_config(extract_str(parse_str, split, offset, offset))
+      CASE(C_INT_ARR):
+        s_to_iarr(extract_str(parse_str, split, offset, offset+size-1), split, out_int_arr)
+      CASE(C_REAL_ARR):
+        s_to_rarr(extract_str(parse_str, split, offset, offset+size-1), split, out_real_arr)
+      CASE(C_STR_ARR):
+        s_to_arr(extract_str(parse_str, split, offset, offset+size-1), split, out_str_arr)
+      ELSE:
+        karelError(INVALID_TYPE_CODE, 'type not set correctly for private method read_types_', ER_ABORT)
+    ENDSELECT
+
+  END files__read_type
+
 
 ROUTINE files__write
   BEGIN
