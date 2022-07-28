@@ -90,23 +90,39 @@ ROUTINE files__read_line
   BEGIN
     --check that file is open
     files__check_open(filename, fl)
+    --check for errors
+    files__check_rw(filename, fl)
+    
+    -- read line
+    READ fl(str)
 
-    ec = IO_STATUS(fl)
-    SELECT ec OF
-      CASE(0):
-        READ fl (str)
-        IF UNINIT(str) THEN
-          RETURN('')
-        ELSE
-          RETURN(str)
-        ENDIF
-      CASE(FILE_RAM_FULL):
-        RETURN('EOF')
-      ELSE:
-        RETURN('')
-    ENDSELECT
+    IF UNINIT(str) THEN
+      RETURN('')
+    ENDIF
+
+    RETURN(str)
 
   END files__read_line
+
+ROUTINE files__read_line_ref
+  VAR
+    buf : INTEGER
+    status : INTEGER
+    ec : INTEGER
+  BEGIN
+    --check that file is open
+    files__check_open(filename, fl)
+    --check for errors
+    files__check_rw(filename, fl)
+    
+    -- read line
+    READ fl(out_str)
+
+    IF UNINIT(out_str) THEN
+      out_str = ''
+    ENDIF
+
+  END files__read_line_ref
 
 
 ROUTINE files__check_open
