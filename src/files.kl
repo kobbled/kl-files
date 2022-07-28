@@ -6,8 +6,9 @@ PROGRAM files
 
 %include errors.klt
 %include files.klt
+%include systemlib.c.klt
 
-%from strings.klh %import search_str
+%include strings.klh
 %include files.klh
 %include errors.klh
 
@@ -41,6 +42,44 @@ ROUTINE files__close
     CLOSE FILE fl
     files__check_closed(filename, fl)
   END files__close
+
+ROUTINE files__read_bytes
+  VAR
+    str : STRING[127]
+    n_bytes : INTEGER
+    status : INTEGER
+  BEGIN
+    --check that file is open
+    files__check_open(filename, fl)
+    --check for errors
+    files__check_rw(filename, fl)
+
+    IF (BYTES_LEFT(fl) > 0) THEN
+      --read buffer into memory
+      READ fl (out_str::buffer_size::0)
+
+      --check string
+      IF UNINIT(str) THEN
+        out_str = ''
+      ENDIF
+    ELSE
+      out_str = 'EOF'
+    ENDIF
+
+  END files__read_bytes
+
+ROUTINE files__purge_bytes
+  VAR
+    str : STRING[127]
+  BEGIN
+    --check that file is open
+    files__check_open(filename, fl)
+    --check for errors
+    files__check_rw(filename, fl)
+
+    --purge bytes out of read
+    READ fl (str::buffer_size::0)
+  END files__purge_bytes
 
 ROUTINE files__read_line
   VAR

@@ -25,6 +25,10 @@ ROUTINE files__create(filename : STRING; fl : FILE) : BOOLEAN FROM files
 declare_function(prog_name,clear,prog_name_alias,clear)
 ROUTINE files__clear(filename : STRING; fl : FILE) FROM files
 --read
+declare_function(prog_name,read_bytes,prog_name_alias,rdbyt)
+ROUTINE files__read_bytes(filename : STRING; fl : FILE; buffer_size : INTEGER; out_str : STRING) FROM files
+declare_function(prog_name,purge_bytes,prog_name_alias,pgbyt)
+ROUTINE files__purge_bytes(filename : STRING; fl : FILE; buffer_size : INTEGER) FROM files
 declare_function(prog_name,read_line,prog_name_alias,rdline)
 ROUTINE files__read_line(filename : STRING; fl : FILE) : STRING FROM files
 declare_function(prog_name,read_to_sarr,prog_name_alias,r_sarr)
