@@ -1,0 +1,16 @@
+PROGRAM test_files
+%NOLOCKGROUP
+
+%include systemlib.c.klt
+
+VAR
+  testFL : FILE
+
+%include kunit.klh
+%include strings.klh
+%include files.klh
+
+BEGIN
+  
+  kunit_done
+END test_files
