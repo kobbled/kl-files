@@ -17,10 +17,10 @@
   "depends" : [
     "errors",
     "Strings",
-    "ktransw-macros"
+    "ktransw-macros",
+    "systemlib"
   ],
   "tests-depends" : [
-    "KUnit",
-    "systemlib"
+    "KUnit"
   ]
 }
