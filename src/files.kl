@@ -328,15 +328,11 @@ ROUTINE files__read_type
 
 ROUTINE files__write
   BEGIN
-    -- write to pipe
-    OPEN FILE fl ('AP', filename)
     --write string
     WRITE fl(str)
     IF (str <> '') THEN
       WRITE fl(CR)
     ENDIF
-
-    CLOSE FILE fl
   END files__write
 
 ROUTINE files__write_from_pipe
