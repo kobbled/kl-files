@@ -330,10 +330,13 @@ ROUTINE files__write
   BEGIN
     --write string
     WRITE fl(str)
-    IF (str <> '') THEN
-      WRITE fl(CR)
-    ENDIF
   END files__write
+
+ROUTINE files__write_line
+  BEGIN
+    --write string
+    WRITE fl(str, CR)
+  END files__write_line
 
 ROUTINE files__write_from_pipe
   VAR
