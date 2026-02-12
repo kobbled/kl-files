@@ -237,7 +237,7 @@ ROUTINE files__create
       RETURN(TRUE)
     ELSE
       files__close(filename, fl)
-      RETURN(FALSE)
+      RETURN(TRUE)
     ENDIF 
   END files__create
 
